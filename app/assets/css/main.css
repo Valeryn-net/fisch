@@ -225,6 +225,24 @@ sup {
   padding-bottom: 26px;
   margin-top: 80px;
 }
+.footer-garden {
+  padding-top: 20px;
+  border-bottom: 1px solid var(--line);
+  margin-bottom: 12px;
+  position: relative;
+}
+.footer-garden::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: var(--sage);
+  opacity: 0.3;
+  mask-image: linear-gradient(transparent, #000);
+  pointer-events: none;
+}
+.footer-garden .ascii-nature {
+  position: relative;
+}
 .footer-top {
   border-top: 1px solid var(--ink);
   padding: 40px 0;
@@ -267,6 +285,13 @@ sup {
   text-transform: uppercase;
 }
 .home-hero {
+  position: relative;
+}
+.hero-water {
+  top: 65px;
+  right: -140px;
+}
+.hero-plate {
   position: relative;
 }
 .home-hero h1 {
@@ -516,7 +541,13 @@ sup {
   text-decoration: underline;
 }
 .habitats-section {
+  position: relative;
   padding-bottom: 90px;
+}
+.habitat-water {
+  right: -150px;
+  bottom: -20px;
+  opacity: 0.09;
 }
 .habitat-row {
   display: grid;
@@ -1182,6 +1213,15 @@ sup {
   }
 }
 @media (max-width: 760px) {
+  .hero-water {
+    top: 80px;
+    right: -360px;
+    opacity: 0.1;
+  }
+  .habitat-water {
+    right: -390px;
+    bottom: -35px;
+  }
   .container {
     padding-inline: 22px;
   }

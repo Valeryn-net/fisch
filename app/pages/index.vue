@@ -28,6 +28,7 @@ const habitats: { name: Habitat; title: string; description: string }[] = [
 <template>
   <div>
     <section class="home-hero container">
+      <AsciiNature kind="water" class="hero-water" />
       <div class="section-kicker mono">
         <span>The ichthyology collection</span
         ><span>Volume 01 / {{ species.length }} species</span>
@@ -87,6 +88,7 @@ const habitats: { name: Habitat; title: string; description: string }[] = [
     <div class="container"><WaterStudy /></div>
 
     <section class="section container habitats-section">
+      <AsciiNature kind="water" class="habitat-water" />
       <div class="section-heading">
         <div>
           <span class="mono eyebrow">02 / Follow the water</span>
