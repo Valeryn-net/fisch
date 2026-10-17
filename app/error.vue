@@ -1,20 +1,30 @@
 <script setup lang="ts">
 import type { NuxtError } from '#app'
-
 defineProps<{ error: NuxtError }>()
 </script>
-
 <template>
-  <NuxtLayout>
-    <div class="container err">
-      <p class="eyebrow">Fehler {{ error.statusCode }}</p>
-      <h1>{{ error.statusCode === 404 ? 'Diese Seite ist abgetaucht.' : 'Etwas ist schiefgelaufen.' }}</h1>
-      <p class="muted">{{ error.statusCode === 404 ? 'Die gesuchte Seite oder Art existiert (noch) nicht.' : error.statusMessage }}</p>
-      <button class="btn" @click="clearError({ redirect: '/arten' })">Zu allen Arten</button>
-    </div>
-  </NuxtLayout>
+  <NuxtLayout
+    ><div class="container error-page">
+      <span class="mono eyebrow"
+        >{{ error.statusCode }} / Uncharted waters</span
+      >
+      <h1>
+        {{
+          error.statusCode === 404
+            ? 'Nothing swimming here.'
+            : 'A little turbulence.'
+        }}
+      </h1>
+      <p>
+        {{
+          error.statusCode === 404
+            ? 'That page or species is not in the collection.'
+            : 'The page could not be loaded. Please try again.'
+        }}
+      </p>
+      <button class="text-link" @click="clearError({ redirect: '/species' })">
+        Return to the collection ↗
+      </button>
+    </div></NuxtLayout
+  >
 </template>
-
-<style scoped>
-.err { padding: 96px 16px; text-align: center; }
-</style>
