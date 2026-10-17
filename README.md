@@ -27,7 +27,9 @@ Pushing to `main` runs `.github/workflows/deploy.yml`, which builds the site and
 
 The historical illustrations are public domain. The coelacanth photograph is © Alberto Fernandez Fernandez, CC BY-SA 3.0, and its resized versions retain that licence. Full source records and image modifications are documented in [public/plates/CREDITS.md](public/plates/CREDITS.md) and on `/about#image-credits`.
 
-The water study uses a locally rendered canvas, pauses when offscreen, offers a pause button and starts paused for visitors who prefer reduced motion. There are no image generation or animation dependencies. Fonts are loaded from Google Fonts, with system fallbacks.
+The ASCII water, kelp forest and swimming fish use locally rendered canvases. Kelp stems and leaves sway separately, fish move in layers with animated fins and wakes, and pointer movement disturbs the water and nearby plants. The floating motion control and the water-study button both pause or resume the entire scene. Rendering pauses offscreen and in hidden tabs; reduced-motion preferences are respected. The decorations do not capture clicks and are hidden from assistive technology. There are no image generation or animation dependencies. Fonts are loaded from Google Fonts, with system fallbacks.
+
+The favicon uses a font-independent fish silhouette in forest green and cream. SVG is preferred, with 16, 32 and 48 pixel ICO fallbacks.
 
 ## Verification
 

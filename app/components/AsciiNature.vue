@@ -1,5 +1,12 @@
 <script setup lang="ts">
+import { drawKelp, drawWater } from '~/utils/asciiOcean'
+
 const props = defineProps<{ kind: 'water' | 'kelp' }>()
+const canvas = ref<HTMLCanvasElement>()
+const { ready } = useAsciiAnimation(canvas, (frame) => {
+  if (props.kind === 'kelp') drawKelp(frame)
+  else drawWater(frame)
+})
 
 // Fixed character fields keep the ornament identical in the HTML and in Vue.
 function water() {
@@ -88,7 +95,8 @@ const art = computed(() => (props.kind === 'kelp' ? kelp() : water()))
 
 <template>
   <div class="ascii-nature" :class="`ascii-${kind}`" aria-hidden="true">
-    <pre>{{ art }}</pre>
+    <pre v-show="!ready">{{ art }}</pre>
+    <canvas ref="canvas" />
   </div>
 </template>
 
@@ -103,10 +111,18 @@ pre {
   letter-spacing: 0;
   white-space: pre;
 }
+canvas {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
 .ascii-water {
   position: absolute;
+  width: 850px;
+  height: 300px;
   color: var(--green);
-  opacity: 0.16;
+  opacity: 0.55;
   transform: rotate(-7deg);
   mask-image: radial-gradient(ellipse at center, #000 20%, transparent 72%);
 }
@@ -115,16 +131,21 @@ pre {
   line-height: 14px;
 }
 .ascii-kelp {
+  position: relative;
+  height: 300px;
   display: flex;
   justify-content: center;
   overflow: hidden;
   color: #6d7d5e;
 }
 .ascii-kelp pre {
+  position: absolute;
+  bottom: 0;
   flex-shrink: 0;
 }
 @media (max-width: 760px) {
   .ascii-kelp {
+    height: 250px;
     justify-content: flex-start;
   }
   .ascii-kelp pre {

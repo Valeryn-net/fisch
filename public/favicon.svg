@@ -1,1 +1,9 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 40 40"><rect width="40" height="40" fill="#f2efe6"/><text x="9" y="31" fill="#233e32" font-family="Georgia,serif" font-size="37" font-style="italic">f.</text></svg>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <title>Fischwiki</title>
+  <rect width="32" height="32" rx="7" fill="#233e32"/>
+  <g fill="#f2efe6">
+    <path d="M11 16c4-6 11-6 16 0-5 6-12 6-16 0Z"/>
+    <path d="m13 16-8-6v12Zm2-4 4-5 2 5Zm1 8 3 4 2-4Z"/>
+  </g>
+  <circle cx="23" cy="15" r="1.1" fill="#233e32"/>
+</svg>

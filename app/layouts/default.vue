@@ -2,6 +2,7 @@
 import { species } from '~/data/species'
 const route = useRoute()
 const open = ref(false)
+const { paused, toggle } = useOceanMotion()
 watch(
   () => route.fullPath,
   () => {
@@ -17,6 +18,7 @@ const links = [
 
 <template>
   <div class="site-shell">
+    <OceanBackground />
     <a class="skip-link" href="#main">Skip to content</a>
     <header class="masthead container">
       <NuxtLink to="/" class="wordmark" aria-label="Fischwiki home"
@@ -64,5 +66,14 @@ const links = [
         ><a href="#main">Back to the surface ↑</a>
       </div>
     </footer>
+    <button
+      class="motion-toggle mono"
+      :aria-pressed="paused"
+      aria-label="Pause or resume all water, kelp and fish animations"
+      @click="toggle"
+    >
+      <span aria-hidden="true">{{ paused ? '▷' : 'Ⅱ' }}</span>
+      {{ paused ? 'Resume motion' : 'Pause motion' }}
+    </button>
   </div>
 </template>

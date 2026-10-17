@@ -16,7 +16,18 @@ export default defineNuxtConfig({
         { name: 'theme-color', content: '#f2efe6' },
       ],
       link: [
-        { rel: 'icon', type: 'image/svg+xml', href: '/favicon.svg' },
+        {
+          rel: 'icon',
+          type: 'image/x-icon',
+          href: '/favicon.ico?v=2',
+          sizes: '16x16 32x32 48x48',
+        },
+        {
+          rel: 'icon',
+          type: 'image/svg+xml',
+          href: '/favicon.svg?v=2',
+          sizes: 'any',
+        },
         { rel: 'preconnect', href: 'https://fonts.googleapis.com' },
         {
           rel: 'preconnect',

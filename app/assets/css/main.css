@@ -153,7 +153,28 @@ sup {
   outline: 2px solid var(--ink);
 }
 .site-shell {
+  position: relative;
+  isolation: isolate;
   overflow: clip;
+}
+.motion-toggle {
+  position: fixed;
+  right: 22px;
+  bottom: 18px;
+  z-index: 60;
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  padding: 9px 12px;
+  border: 1px solid var(--line);
+  background: rgba(242, 239, 230, 0.96);
+  color: var(--green);
+  font-size: 9px;
+  box-shadow: 0 2px 12px rgba(35, 62, 50, 0.05);
+}
+.motion-toggle:hover {
+  background: var(--green);
+  color: var(--paper);
 }
 .masthead {
   display: flex;
@@ -222,7 +243,7 @@ sup {
 }
 .site-footer {
   padding-top: 30px;
-  padding-bottom: 26px;
+  padding-bottom: 76px;
   margin-top: 80px;
 }
 .footer-garden {
@@ -547,7 +568,7 @@ sup {
 .habitat-water {
   right: -150px;
   bottom: -20px;
-  opacity: 0.09;
+  opacity: 0.35;
 }
 .habitat-row {
   display: grid;
@@ -1216,7 +1237,7 @@ sup {
   .hero-water {
     top: 80px;
     right: -360px;
-    opacity: 0.1;
+    opacity: 0.35;
   }
   .habitat-water {
     right: -390px;
@@ -1785,6 +1806,9 @@ sup {
   }
 }
 @media print {
+  .motion-toggle {
+    display: none;
+  }
   .masthead nav,
   .menu-toggle,
   .site-footer,
