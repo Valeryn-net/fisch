@@ -1,254 +1,461 @@
-import type { OceanFrame } from '~/composables/useAsciiAnimation'
+export type OceanKind = 'water' | 'kelp' | 'background' | 'study'
+export interface OceanFrame {
+  columns: number
+  rows: number
+  tick: number
+  scroll: number
+  current: number
+  pointer: { x: number; y: number; strength: number }
+}
+type Sprite = string[]
+type Grid = string[][]
 
-const fishShape = [
-  '             /|          ',
-  '       _____/ |___       ',
-  '      /           `-.    ',
-  '  |\\ /      :    o   \\   ',
-  '  | >       :         >  ',
-  '  |/ \\      :       _/   ',
-  "      `----.  .----'     ",
-  '            \\/          ',
+// Original flipbooks. Each drawing is replaced on a fixed character grid;
+// glyphs are never rotated, stretched, or moved between character cells.
+const fish: Sprite[] = [
+  [
+    '           /|          ',
+    '      ____/ |___       ',
+    '     / . . . .  \\      ',
+    ' \\  / : : : : o  \\     ',
+    '  >|  . . . .     >    ',
+    ' /  \\ : : : : __/      ',
+    "     '---. .--'        ",
+    '          \\|           ',
+  ],
+  [
+    '            ,          ',
+    '      _____/|___       ',
+    '     / : : : :  \\      ',
+    '  | / . . . . o  \\     ',
+    ' > |  : : : :     )    ',
+    '  | \\ . . . . __/      ',
+    "     '---._.--'        ",
+    '          /            ',
+  ],
+  [
+    '           /|          ',
+    '      ____/ |___       ',
+    '     / . . . .  \\      ',
+    ' /  / : : : : o  \\     ',
+    '  >|  . . . .     >    ',
+    ' \\  \\ : : : : __/      ',
+    "     '---. .--'        ",
+    '          /|           ',
+  ],
+  [
+    '            .          ',
+    '      _____/|___       ',
+    '     / : : : :  \\      ',
+    '  | / . . . . o  \\     ',
+    ' > |  : : : :     >    ',
+    '  | \\ . . . . __/      ',
+    "     '---._.--'        ",
+    '          \\            ',
+  ],
 ]
+const minnows: Sprite[] = [
+  ['  _/      ', '><((:o>   ', '  \\_      '],
+  ['   ,      ', ' >((.o>   ', '   /      '],
+  ['  _/      ', '><((:o)   ', '  \\_      '],
+  ['   .      ', ' >((.o>   ', '   \\      '],
+]
+const jellyfish: Sprite[] = [
+  [
+    '   .----.   ',
+    ' ./ .  . \\. ',
+    '(__________)',
+    '  ) |  | (  ',
+    ' (  :  :  ) ',
+    '  ) .  . (  ',
+  ],
+  [
+    '    .--.    ',
+    '  ./ .. \\.  ',
+    ' (________) ',
+    '  ( |  | )  ',
+    '   ):  :(   ',
+    '  ( .  . )  ',
+  ],
+  [
+    '    .--.    ',
+    '   / .. \\   ',
+    '  (______)  ',
+    '  / :  : \\  ',
+    ' (  .  .  ) ',
+    '  \\      /  ',
+  ],
+  [
+    '   .----.   ',
+    ' ./ .  . \\. ',
+    '(__________)',
+    '  ( |  | )  ',
+    '   ):  :(   ',
+    '  ( .  . )  ',
+  ],
+]
+const crab: Sprite[] = [
+  [
+    ' ()       () ',
+    '  \\  o o  /  ',
+    '   \\(---)/   ',
+    ' _/|_____|\\_ ',
+    '  / / \\ \\   ',
+  ],
+  [
+    ' \\/       () ',
+    '  \\  o o  /  ',
+    '   \\(---)/   ',
+    '  /|_____|\\  ',
+    ' /_/   \\_\\  ',
+  ],
+  [
+    ' ()       \\/ ',
+    '  \\  o o  /  ',
+    '   \\(---)/   ',
+    ' _/|_____|\\_ ',
+    '  / / \\ \\   ',
+  ],
+  [
+    ' ()       () ',
+    '  \\  o o  /  ',
+    '   \\(---)/   ',
+    '  /|_____|\\  ',
+    ' /_/   \\_\\  ',
+  ],
+]
+const clam: Sprite[] = [
+  ['    __    ', ' .-||||-. ', '(________)', '  \\____/  '],
+  ['   .--.   ', ' ./||||\\. ', '(---o----)', '  \\____/  '],
+  ['  .----.  ', ' /||||||\\ ', '(   o    )', ' \\______/ '],
+  ['   .--.   ', ' ./||||\\. ', '(---o----)', '  \\____/  '],
+]
+const starfish = [
+  '    .    ',
+  '   /|    ',
+  '._/ |_.  ',
+  ' \\ . /   ',
+  ' /_/_\\   ',
+]
+const mirrorMap: Record<string, string> = {
+  '/': '\\',
+  '\\': '/',
+  '(': ')',
+  ')': '(',
+  '<': '>',
+  '>': '<',
+  '[': ']',
+  ']': '[',
+  '{': '}',
+  '}': '{',
+}
 
-// Every fish is actual typeset ASCII. Tail and fins undulate independently.
-export function drawAsciiFish(
-  ctx: CanvasRenderingContext2D,
+function grid(columns: number, rows: number): Grid {
+  return Array.from({ length: rows }, () => Array<string>(columns).fill(' '))
+}
+function put(field: Grid, x: number, y: number, char: string) {
+  x = Math.round(x)
+  y = Math.round(y)
+  if (y >= 0 && y < field.length && x >= 0 && x < field[0]!.length)
+    field[y]![x] = char
+}
+function stamp(
+  field: Grid,
+  sprite: Sprite,
   x: number,
   y: number,
-  scale: number,
-  direction: number,
-  phase: number,
-  opacity = 1,
+  mirrored = false,
+  opaque = false,
 ) {
-  ctx.save()
-  ctx.translate(x, y)
-  ctx.scale(scale * direction, scale)
-  ctx.globalAlpha *= opacity
-  ctx.font = '11px "IBM Plex Mono", monospace'
-  fishShape.forEach((line, row) => {
-    Array.from(line).forEach((char, column) => {
-      if (char === ' ') return
-      const tail = Math.max(0, 1 - column / 14)
-      const sway = Math.sin(phase * 4.2 - column * 0.3) * (1 + tail * 4)
-      const fin = row < 2 || row > 5 ? Math.sin(phase * 3 + column) * 1.4 : 0
-      ctx.fillText(char, (column - 12) * 6.5, (row - 4) * 10 + sway + fin)
+  const width = Math.max(...sprite.map((line) => line.length))
+  sprite.forEach((line, row) => {
+    const text = mirrored
+      ? Array.from(line.padEnd(width))
+          .reverse()
+          .map((char) => mirrorMap[char] ?? char)
+          .join('')
+      : line
+    const start = text.search(/\S/)
+    const end = text.trimEnd().length
+    Array.from(text).forEach((char, column) => {
+      if (char !== ' ' || (opaque && column >= start && column < end))
+        put(field, x + column, y + row, char)
     })
   })
-  ctx.restore()
+}
+const mod = (value: number, length: number) =>
+  ((value % length) + length) % length
+function swim(
+  field: Grid,
+  frame: OceanFrame,
+  x: number,
+  y: number,
+  small = false,
+  left = false,
+  phase = 0,
+) {
+  const frames = small ? minnows : fish
+  const pose = frames[mod(Math.floor(frame.tick / 2) + phase, frames.length)]!
+  stamp(field, pose, x, y, left, true)
 }
 
-export function drawWater(frame: OceanFrame, dark = false) {
-  const { ctx, width, height, time, pointer } = frame
-  ctx.fillStyle = dark ? '#d9e2bb' : '#52694c'
-  ctx.font = '12px "IBM Plex Mono", monospace'
-  const spacing = width < 500 ? 15 : 13
-  for (let y = 8; y < height; y += 16) {
-    for (let x = 4; x < width; x += spacing) {
-      const distance = Math.hypot(x - pointer.x, y - pointer.y)
-      const disturbance =
-        Math.exp(-distance / 140) *
-        Math.sin(distance / 14 - time * 4) *
+function water(field: Grid, frame: OceanFrame, dense = false) {
+  const { columns, rows, tick, pointer } = frame
+  const time = tick / 8
+  for (let y = 0; y < rows; y++) {
+    for (let x = 0; x < columns; x++) {
+      const distance = Math.hypot((x - pointer.x) * 0.6, y - pointer.y)
+      const ripple =
+        Math.sin(distance * 0.65 - time * 3) *
+        Math.exp(-distance / 11) *
         pointer.strength
-      const flow =
-        Math.sin(
-          x * 0.027 + time * 0.8 + Math.sin(y * 0.018 + time * 0.35) * 2,
-        ) +
-        Math.cos(y * 0.047 - time * 0.7 + x * 0.006) * 0.75 +
-        disturbance * 1.8
-      const crest = Math.abs(flow)
-      if (!dark && crest > 0.6) continue
-      ctx.globalAlpha = dark
-        ? 0.08 + (flow + 2) * 0.065
-        : 0.16 + (0.6 - crest) * 0.6
-      const symbol = dark
-        ? '.:~+*'[Math.max(0, Math.min(4, Math.floor((flow + 1.75) * 1.25)))]!
-        : crest < 0.16
-          ? '~'
-          : crest < 0.36
-            ? '-'
-            : '.'
-      ctx.fillText(
-        symbol,
-        x + Math.sin(time * 0.5 + y * 0.03) * 3,
-        y + Math.sin(x * 0.02 + time) * 3 + disturbance * 8,
-      )
+      const wave =
+        Math.sin(x * 0.16 - time * 0.7 + Math.sin(y * 0.32 + time * 0.3) * 2) +
+        Math.cos(y * 0.61 + x * 0.03 + time * 0.5) * 0.6 +
+        ripple
+      if (Math.abs(wave) < 0.12) put(field, x, y, '~')
+      else if (Math.abs(wave) < 0.25) put(field, x, y, '-')
+      else if ((x * 13 + y * 7) % (dense ? 9 : 31) === 0) put(field, x, y, '.')
+      else if (dense && Math.abs(wave) < 0.5 && (x + y) % 3 === 0)
+        put(field, x, y, ':')
     }
   }
-  ctx.globalAlpha = 1
 }
 
-export function drawBubbles(frame: OceanFrame, count: number, opacity: number) {
-  const { ctx, width, height, time } = frame
-  ctx.font = '10px "IBM Plex Mono", monospace'
-  for (let i = 0; i < count; i++) {
-    const progress =
-      ((time * (7 + (i % 4) * 2) + i * 67) % (height + 30)) / (height + 30)
-    const x =
-      ((i * 173 + 41) % width) +
-      Math.sin(time * 0.6 + i * 2 + progress * 8) * 12
-    ctx.globalAlpha = opacity * Math.sin(progress * Math.PI)
-    ctx.fillText(
-      i % 3 === 0 ? 'o' : '.',
-      x,
-      height + 15 - progress * (height + 30),
+function bubbles(field: Grid, frame: OceanFrame, amount: number, seed = 0) {
+  for (let i = 0; i < amount; i++) {
+    const progress = frame.tick / (i % 2 ? 4 : 6) + i * 17
+    const y = frame.rows - 1 - mod(progress, frame.rows + 3)
+    const x = mod(
+      i * 31 + seed + Math.round(Math.sin(progress / 5) * 2),
+      frame.columns,
     )
-  }
-  ctx.globalAlpha = 1
-}
-
-export function drawKelp(frame: OceanFrame) {
-  const { ctx, width, height, time, pointer } = frame
-  const world = Math.max(width, 730)
-  const offset = width < 730 ? -75 : (width - world) / 2
-  const bottom = height - 16
-  const plants = [
-    [0.035, 0.38, 1],
-    [0.12, 0.67, 3],
-    [0.21, 0.9, 2],
-    [0.3, 0.5, 4],
-    [0.69, 0.63, 2],
-    [0.78, 0.95, 5],
-    [0.88, 0.76, 1],
-    [0.97, 0.42, 3],
-  ]
-  ctx.font = '12px "IBM Plex Mono", monospace'
-  for (const [position, tall, seed] of plants) {
-    const anchor = position! * world + offset
-    const length = (height - 35) * tall!
-    const steps = Math.floor(length / 10)
-    const attraction =
-      Math.exp(-Math.abs(anchor - pointer.x) / 130) * pointer.strength
-    const stem = (step: number) => {
-      const fraction = step / steps
-      return (
-        anchor +
-        fraction ** 1.6 *
-          (Math.sin(time * 0.95 - fraction * 2.4 + seed!) * 20 +
-            Math.sin(time * 0.43 + seed!) * 11 +
-            attraction * Math.sin(time * 2.4 + seed!) * 30)
-      )
-    }
-    ctx.fillStyle = seed! % 2 ? '#5f7756' : '#81916b'
-    ctx.globalAlpha = 0.7 + (seed! % 3) * 0.1
-    for (let step = 0; step <= steps; step++) {
-      const x = stem(step)
-      const y = bottom - step * 10
-      const direction = stem(step + 1) - x
-      ctx.fillText(
-        step === steps
-          ? '.'
-          : Math.abs(direction) < 0.9
-            ? '|'
-            : direction > 0
-              ? '/'
-              : '\\',
-        x,
-        y,
-      )
-      if (step > 2 && step < steps - 1 && step % 3 === seed! % 3) {
-        const side = (Math.floor(step / 3) + seed!) % 2 ? 1 : -1
-        const curl = Math.sin(time * 1.35 - step * 0.24 + seed!)
-        ctx.save()
-        ctx.translate(x + 3, y)
-        ctx.rotate(side * (0.22 + curl * 0.14))
-        for (let leaf = 0; leaf < 4; leaf++) {
-          ctx.fillText(
-            side > 0 ? '/' : '\\',
-            side * (5 + leaf * 4),
-            -leaf * 5 + curl * leaf,
-          )
-          if (leaf > 1)
-            ctx.fillText(
-              side > 0 ? ')' : '(',
-              side * (10 + leaf * 4),
-              -leaf * 5 - 4 + curl * leaf,
-            )
-        }
-        ctx.restore()
-      }
-    }
-    ctx.fillText('_/|\\_', anchor - 12, bottom + 7)
-  }
-  ctx.fillStyle = '#71845c'
-  for (let x = 0; x < width; x += 14) {
-    ctx.globalAlpha = 0.22 + Math.sin(x * 0.09) * 0.12
-    ctx.fillText(x % 42 === 0 ? '_' : '.', x, height - 4)
-  }
-  ctx.globalAlpha = 1
-  ctx.fillStyle = '#587052'
-  for (let i = 0; i < 3; i++) {
-    const direction = i === 1 ? -1 : 1
-    const progress =
-      ((time * (18 + i * 7) + width * (0.35 + i * 0.24)) % (width + 220)) - 110
-    drawAsciiFish(
-      ctx,
-      direction > 0 ? progress : width - progress,
-      height * (0.22 + i * 0.21) + Math.sin(time * 0.7 + i) * 14,
-      i === 1 ? 0.48 : 0.35,
-      direction,
-      time + i,
-      0.66,
-    )
-  }
-  drawBubbles(frame, 13, 0.42)
-}
-
-export function drawOpenWater(frame: OceanFrame) {
-  const { ctx, width, height, time, pointer } = frame
-  ctx.fillStyle = '#698061'
-  for (let i = 0; i < 5; i++) {
-    const direction = i % 2 ? -1 : 1
-    const progress =
-      ((time * (18 + i * 6) + width * (0.13 + i * 0.22)) % (width + 300)) - 150
-    let x = direction > 0 ? progress : width - progress
-    let y = height * (0.17 + (i % 4) * 0.2) + Math.sin(time * 0.28 + i * 2) * 30
-    const near =
-      Math.exp(-Math.hypot(x - pointer.x, y - pointer.y) / 150) *
-      pointer.strength
-    x += direction * near * 22
-    y += (y > pointer.y ? 1 : -1) * near * 40
-    ctx.globalAlpha = 1
-    drawAsciiFish(
-      ctx,
+    put(
+      field,
       x,
       y,
-      i % 3 === 0 ? 0.85 : 0.47,
-      direction,
-      time + i * 3,
-      0.3,
+      ['.', 'o', 'O', 'o'][mod(Math.floor(progress / 5) + i, 4)]!,
     )
-    // Small companions follow their own phase and wake rather than one rigid sprite.
-    if (i === 2 || i === 4) {
-      drawAsciiFish(
-        ctx,
-        x - direction * 65,
-        y + 30 + Math.sin(time + i) * 8,
-        0.25,
-        direction,
-        time + 3,
-        0.2,
-      )
-      drawAsciiFish(
-        ctx,
-        x - direction * 105,
-        y - 20,
-        0.19,
-        direction,
-        time + 5,
-        0.17,
-      )
-    }
-    ctx.font = '11px "IBM Plex Mono", monospace'
-    for (let wake = 1; wake < 8; wake++) {
-      ctx.globalAlpha = 0.1 * (1 - wake / 8)
-      ctx.fillText(
-        wake % 2 ? '~' : '.',
-        x - direction * (85 + wake * 12),
-        y + Math.sin(time * 2 - wake) * 5,
-      )
-    }
   }
-  ctx.globalAlpha = 1
-  drawBubbles(frame, width < 600 ? 8 : 17, 0.18)
+}
+
+function plant(
+  field: Grid,
+  frame: OceanFrame,
+  anchor: number,
+  tall: number,
+  seed: number,
+) {
+  const ground = frame.rows - 3
+  const pull =
+    Math.exp(-Math.abs(frame.pointer.x - anchor) / 13) * frame.pointer.strength
+  const stem = (rise: number) =>
+    anchor +
+    Math.round(
+      (rise / tall) ** 1.5 *
+        (Math.sin(frame.tick / 9 - rise * 0.22 + seed) * 2.5 +
+          Math.sin(frame.tick / 21 + seed) * 1.5 +
+          pull * 3),
+    )
+  for (let rise = 0; rise < tall; rise++) {
+    const x = stem(rise)
+    const above = stem(rise + 1)
+    const y = ground - rise
+    put(
+      field,
+      x,
+      y,
+      rise === tall - 1 ? ',' : above === x ? '|' : above > x ? '/' : '\\',
+    )
+    if (rise < 3 || rise >= tall - 2 || (rise + seed) % 3 !== 0) continue
+    const phase = mod(Math.floor(frame.tick / 3) + rise + seed, 4)
+    const leafFrames = [
+      ['   _,', ' _/ /', '/__/ '],
+      ['  _', ' / )', '/_/ '],
+      ['  ._', ' / /', '/_/ '],
+      ['   .', ' _/ )', '/__/ '],
+    ]
+    const leaf = leafFrames[phase]!
+    const right = (Math.floor(rise / 3) + seed) % 2 === 0
+    stamp(field, leaf, right ? x + 1 : x - 5, y - 2, !right)
+    if (tall > 18 && rise % 6 === seed % 3)
+      stamp(
+        field,
+        [right ? '(\\' : '/)', right ? ' \\)' : '(/'],
+        right ? x - 3 : x + 1,
+        y - 1,
+      )
+  }
+  stamp(field, ['_/|\\_'], anchor - 2, ground + 1)
+}
+
+function seabed(field: Grid, frame: OceanFrame) {
+  const { columns, rows, tick } = frame
+  const mobile = columns < 80
+  const height = rows - 5
+  const plants = mobile
+    ? [
+        [0.02, 0.55, 1],
+        [0.18, 0.85, 2],
+        [0.86, 0.73, 4],
+        [0.98, 0.45, 3],
+      ]
+    : [
+        [0.025, 0.5, 1],
+        [0.1, 0.78, 2],
+        [0.18, 0.93, 3],
+        [0.27, 0.6, 5],
+        [0.76, 0.65, 2],
+        [0.85, 0.96, 4],
+        [0.94, 0.8, 3],
+        [0.99, 0.4, 1],
+      ]
+  for (const [position, size, seed] of plants)
+    plant(
+      field,
+      frame,
+      Math.round(position! * columns),
+      Math.floor(height * size!),
+      seed!,
+    )
+  // A stable, speckled bed: only its inhabitants animate.
+  for (let x = 0; x < columns; x++) {
+    if (x % 3 === 0) put(field, x, rows - 1, '.')
+    if ((x * 7) % 19 === 0) put(field, x, rows - 2, '_')
+  }
+  const walk = Math.floor(tick / 4)
+  const stroll = Math.round(Math.sin(walk / 12) * (mobile ? 3 : 12))
+  const resting = mod(tick, 96) > 72
+  const crabX = Math.floor(columns * 0.5) - 6 + stroll
+  const greeting =
+    Math.hypot(frame.pointer.x - crabX - 6, frame.pointer.y - rows + 4) < 9 &&
+    frame.pointer.strength > 0.2
+  const crabPose = [
+    ...crab[greeting ? 1 + mod(walk, 2) : resting ? 0 : mod(walk, 4)]!,
+  ]
+  if (mod(tick, 88) === 72) crabPose[1] = crabPose[1]!.replace('o o', '- -')
+  stamp(field, crabPose, crabX, rows - 6)
+  const opening = mod(Math.floor(tick / 4), 12)
+  const nearShell =
+    Math.hypot(
+      frame.pointer.x - columns * (mobile ? 0.2 : 0.38),
+      frame.pointer.y - rows + 4,
+    ) < 7 && frame.pointer.strength > 0.2
+  const clamPose = nearShell ? 2 : opening < 8 ? 0 : [1, 2, 2, 3][opening - 8]!
+  stamp(
+    field,
+    clam[clamPose]!,
+    Math.round(columns * (mobile ? 0.2 : 0.38)) - 4,
+    rows - 5,
+  )
+  stamp(
+    field,
+    clam[mod(clamPose + 2, 4)]!,
+    Math.round(columns * (mobile ? 0.77 : 0.65)) - 5,
+    rows - 5,
+  )
+  if (!mobile) {
+    stamp(field, starfish, Math.round(columns * 0.57), rows - 6)
+    stamp(
+      field,
+      ['  _', ' /@\\__', ' \\___/..'],
+      Math.round(columns * 0.31) + Math.floor(mod(tick / 24, 6)),
+      rows - 4,
+    )
+  }
+  const fishY = mobile ? 7 : 10
+  const fishX = mod(tick / 3 + columns * 0.4, columns + 24) - 12
+  swim(field, frame, fishX, fishY, true)
+  swim(
+    field,
+    frame,
+    columns - mod(tick / 4 + columns * 0.25, columns + 20),
+    fishY + 6,
+    true,
+    true,
+    1,
+  )
+  if (columns > 58) {
+    const pulse = mod(Math.floor(tick / 3), jellyfish.length)
+    stamp(
+      field,
+      jellyfish[pulse]!,
+      Math.floor(columns * 0.54) + Math.round(Math.sin(tick / 30) * 3),
+      2 + Math.round(Math.sin(tick / 14)),
+    )
+  }
+  bubbles(field, frame, mobile ? 4 : 8, 13)
+}
+
+function openWater(field: Grid, frame: OceanFrame) {
+  const { columns, rows, tick, scroll, current } = frame
+  const mobile = columns < 90
+  for (let i = 0; i < (mobile ? 4 : 6); i++) {
+    const depth = i % 3 === 0 ? 1 : 0.45
+    const left = i % 2 === 1
+    const travel = tick / (i % 2 ? 5 : 4) + scroll * 0.025 * depth
+    const progress = mod(travel + columns * (0.2 + i * 0.21), columns + 35) - 25
+    const x = left ? columns - progress : progress
+    const y =
+      mod(
+        rows * (0.13 + (i % 4) * 0.22) -
+          scroll * 0.004 * depth +
+          Math.round(Math.sin(tick / 32 + i) * 2),
+        rows + 10,
+      ) - 4
+    swim(field, frame, x, y, depth < 1 || mobile, left, i)
+    if (i === 2 || i === 4) {
+      swim(field, frame, x + (left ? 12 : -13), y + 3, true, left, i + 2)
+      swim(field, frame, x + (left ? 21 : -24), y - 2, true, left, i + 1)
+    }
+    for (let wake = 0; wake < (Math.abs(current) > 1 ? 8 : 4); wake++)
+      put(
+        field,
+        x + (left ? 14 + wake * 2 : -3 - wake * 2),
+        y + 2 + mod(tick + wake, 2),
+        wake % 2 ? '.' : '~',
+      )
+  }
+  bubbles(field, frame, mobile ? 4 : 8, 4)
+}
+
+function study(field: Grid, frame: OceanFrame) {
+  water(field, frame, true)
+  const x = mod(frame.tick / 3 + frame.columns * 0.5, frame.columns + 28) - 15
+  swim(field, frame, x, Math.floor(frame.rows * 0.3), false)
+  for (let i = 0; i < 4; i++) {
+    const schoolX =
+      frame.columns - mod(frame.tick / 4 + i * 12, frame.columns + 24)
+    swim(
+      field,
+      frame,
+      schoolX,
+      Math.floor(frame.rows * 0.65) + (i % 2) * 3,
+      true,
+      true,
+      i,
+    )
+  }
+  if (frame.columns > 45)
+    stamp(
+      field,
+      jellyfish[mod(Math.floor(frame.tick / 3), 4)]!,
+      Math.floor(frame.columns * 0.75),
+      2,
+    )
+  bubbles(field, frame, 8, 5)
+}
+
+export function renderOcean(kind: OceanKind, frame: OceanFrame): string {
+  const safeFrame = {
+    ...frame,
+    columns: Math.max(1, Math.floor(frame.columns)),
+    rows: Math.max(1, Math.floor(frame.rows)),
+  }
+  const field = grid(safeFrame.columns, safeFrame.rows)
+  if (kind === 'kelp') seabed(field, safeFrame)
+  else if (kind === 'water') water(field, safeFrame)
+  else if (kind === 'background') openWater(field, safeFrame)
+  else study(field, safeFrame)
+  return field.map((row) => row.join('')).join('\n')
 }

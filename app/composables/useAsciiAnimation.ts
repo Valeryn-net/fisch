@@ -1,48 +1,58 @@
 import type { Ref } from 'vue'
-
-export interface OceanFrame {
-  ctx: CanvasRenderingContext2D
-  width: number
-  height: number
-  time: number
-  pointer: { x: number; y: number; strength: number }
-}
+import { renderOcean, type OceanKind } from '~/utils/asciiOcean'
 
 export function useAsciiAnimation(
-  canvas: Ref<HTMLCanvasElement | undefined>,
-  paint: (frame: OceanFrame) => void,
-  fps = 30,
+  host: Ref<HTMLElement | undefined>,
+  kind: OceanKind,
 ) {
   const { paused } = useOceanMotion()
-  const ready = ref(false)
-  let context: CanvasRenderingContext2D | null = null
+  const text = ref(
+    renderOcean(kind, {
+      columns: kind === 'background' ? 120 : kind === 'kelp' ? 120 : 90,
+      rows: kind === 'background' ? 60 : 27,
+      tick: 0,
+      scroll: 0,
+      current: 0,
+      pointer: { x: -1000, y: -1000, strength: 0 },
+    }),
+  )
   let frame = 0
-  let time = 0
   let last = 0
-  let width = 0
-  let height = 0
+  let elapsed = 0
+  let tick = 0
+  let columns = 0
+  let rows = 0
+  let cellWidth = 7.2
+  let cellHeight = 14
   let visible = false
+  let scroll = 0
+  let targetScroll = 0
+  let current = 0
+  let previousY = 0
   let resize: ResizeObserver | undefined
   let intersection: IntersectionObserver | undefined
   const pointer = { x: -1000, y: -1000, strength: 0 }
-  let target = { x: -1000, y: -1000 }
 
   function draw() {
-    if (!context || !width || !height) return
-    context.clearRect(0, 0, width, height)
-    context.save()
-    context.textBaseline = 'middle'
-    paint({ ctx: context, width, height, time, pointer })
-    context.restore()
-    ready.value = true
+    if (!columns || !rows) return
+    text.value = renderOcean(kind, {
+      columns,
+      rows,
+      tick,
+      scroll,
+      current,
+      pointer,
+    })
   }
   function loop(now: number) {
-    if (now - last >= 1000 / fps) {
-      time += Math.min((now - last) / 1000, 0.08)
+    // Eight whole ASCII frames per second, with no interpolated glyph positions.
+    if (now - last >= 1000 / 8) {
+      elapsed += Math.min((now - last) / 1000, 0.25)
+      tick = Math.floor(elapsed * 8)
       last = now
-      pointer.x += (target.x - pointer.x) * 0.16
-      pointer.y += (target.y - pointer.y) * 0.16
-      pointer.strength *= 0.965
+      scroll += (targetScroll - scroll) * 0.45
+      current *= 0.65
+      pointer.strength *= 0.88
       draw()
     }
     frame = requestAnimationFrame(loop)
@@ -50,48 +60,57 @@ export function useAsciiAnimation(
   function sync() {
     cancelAnimationFrame(frame)
     frame = 0
-    if (!context) return
     if (!paused.value && visible && !document.hidden) {
+      targetScroll = window.scrollY
       last = performance.now()
       frame = requestAnimationFrame(loop)
-    } else draw()
+    }
+  }
+  function measure() {
+    const element = host.value
+    const pre = element?.querySelector('pre')
+    if (!element || !pre) return
+    const style = getComputedStyle(pre)
+    const context = document.createElement('canvas').getContext('2d')
+    if (context) {
+      context.font = `${style.fontWeight} ${style.fontSize} ${style.fontFamily}`
+      cellWidth = context.measureText('M').width || 7.2
+    }
+    cellHeight = parseFloat(style.lineHeight) || 14
+    columns = Math.max(1, Math.floor(element.clientWidth / cellWidth))
+    rows = Math.max(1, Math.floor(element.clientHeight / cellHeight))
+    draw()
   }
   function move(event: PointerEvent) {
     if (
       !visible ||
       paused.value ||
       event.pointerType === 'touch' ||
-      !canvas.value
+      !host.value
     )
       return
-    const bounds = canvas.value.getBoundingClientRect()
-    const x = event.clientX - bounds.left
-    const y = event.clientY - bounds.top
-    if (x < -80 || x > width + 80 || y < -80 || y > height + 80) return
-    const distance = Math.hypot(x - target.x, y - target.y)
-    if (target.x < 0) {
-      pointer.x = x
-      pointer.y = y
+    const bounds = host.value.getBoundingClientRect()
+    const x = (event.clientX - bounds.left) / cellWidth
+    const y = (event.clientY - bounds.top) / cellHeight
+    if (x < 0 || x >= columns || y < 0 || y >= rows) return
+    pointer.x = x
+    pointer.y = y
+    pointer.strength = 1
+  }
+  function onScroll() {
+    const y = window.scrollY
+    if (!paused.value) {
+      targetScroll = y
+      current = Math.max(-8, Math.min(8, current + (y - previousY) * 0.02))
     }
-    target = { x, y }
-    pointer.strength = Math.min(1, pointer.strength + distance / 120)
+    previousY = y
   }
   watch(paused, sync)
   onMounted(() => {
-    if (!canvas.value) return
-    context = canvas.value.getContext('2d')
-    if (!context) return
-    resize = new ResizeObserver(([entry]) => {
-      if (!entry || !canvas.value || !context) return
-      width = entry.contentRect.width
-      height = entry.contentRect.height
-      const ratio = Math.min(window.devicePixelRatio || 1, 2)
-      canvas.value.width = Math.round(width * ratio)
-      canvas.value.height = Math.round(height * ratio)
-      context.setTransform(ratio, 0, 0, ratio, 0, 0)
-      draw()
-    })
-    resize.observe(canvas.value)
+    if (!host.value) return
+    previousY = window.scrollY
+    resize = new ResizeObserver(measure)
+    resize.observe(host.value)
     intersection = new IntersectionObserver(
       ([entry]) => {
         visible = entry?.isIntersecting ?? false
@@ -99,12 +118,12 @@ export function useAsciiAnimation(
       },
       { rootMargin: '80px' },
     )
-    intersection.observe(canvas.value)
+    intersection.observe(host.value)
     window.addEventListener('pointermove', move, { passive: true })
+    window.addEventListener('scroll', onScroll, { passive: true })
     document.addEventListener('visibilitychange', sync)
-    // The first frame uses system fonts; repaint once the page's mono font arrives.
     document.fonts.ready.then(() => {
-      if (context) draw()
+      if (host.value) measure()
     })
   })
   onBeforeUnmount(() => {
@@ -112,8 +131,8 @@ export function useAsciiAnimation(
     resize?.disconnect()
     intersection?.disconnect()
     window.removeEventListener('pointermove', move)
+    window.removeEventListener('scroll', onScroll)
     document.removeEventListener('visibilitychange', sync)
-    context = null
   })
-  return { ready }
+  return { text }
 }

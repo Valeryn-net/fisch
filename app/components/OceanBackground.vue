@@ -1,11 +1,12 @@
 <script setup lang="ts">
-import { drawOpenWater } from '~/utils/asciiOcean'
-const canvas = ref<HTMLCanvasElement>()
-useAsciiAnimation(canvas, drawOpenWater, 24)
+const host = ref<HTMLElement>()
+const { text } = useAsciiAnimation(host, 'background')
 </script>
 
 <template>
-  <div class="ocean-background" aria-hidden="true"><canvas ref="canvas" /></div>
+  <div ref="host" class="ocean-background ascii-frame" aria-hidden="true">
+    <pre>{{ text }}</pre>
+  </div>
 </template>
 
 <style scoped>
@@ -15,11 +16,15 @@ useAsciiAnimation(canvas, drawOpenWater, 24)
   z-index: -1;
   pointer-events: none;
   user-select: none;
-}
-canvas {
-  display: block;
-  width: 100%;
-  height: 100%;
+  color: #5f7655;
+  opacity: 0.28;
+  mask-image: linear-gradient(
+    90deg,
+    #000,
+    rgba(0, 0, 0, 0.4) 32%,
+    rgba(0, 0, 0, 0.4) 68%,
+    #000
+  );
 }
 @media print {
   .ocean-background {

@@ -27,10 +27,14 @@ Pushing to `main` runs `.github/workflows/deploy.yml`, which builds the site and
 
 The historical illustrations are public domain. The coelacanth photograph is © Alberto Fernandez Fernandez, CC BY-SA 3.0, and its resized versions retain that licence. Full source records and image modifications are documented in [public/plates/CREDITS.md](public/plates/CREDITS.md) and on `/about#image-credits`.
 
-The ASCII water, kelp forest and swimming fish use locally rendered canvases. Kelp stems and leaves sway separately, fish move in layers with animated fins and wakes, and pointer movement disturbs the water and nearby plants. The floating motion control and the water-study button both pause or resume the entire scene. Rendering pauses offscreen and in hidden tabs; reduced-motion preferences are respected. The decorations do not capture clicks and are hidden from assistive technology. There are no image generation or animation dependencies. Fonts are loaded from Google Fonts, with system fallbacks.
+The ocean scenes are real ASCII text in `<pre>` elements. Eight frames per second replace characters on a fixed monospace grid: fish fins, kelp blades, a walking crab, opening clams, a jellyfish, a starfish and a small snail. There are no rotated glyphs or canvas-drawn scenes. Background fish also respond to page scrolling with different depth and wake patterns. Pointer movement changes water ripples and nearby tide-pool creatures.
+
+The floating motion control and the water-study button both pause or resume all scenes, including scroll motion. Rendering pauses offscreen and in hidden tabs; reduced-motion preferences are respected. The decorations do not capture clicks and are hidden from assistive technology. All ASCII drawings are original; classic terminal aquariums such as [ASCIIQuarium](https://robobunny.com/projects/asciiquarium/html/) informed the direction, without importing their code or artwork. There are no animation dependencies. Fonts are loaded from Google Fonts, with system fallbacks.
 
 The favicon uses a font-independent fish silhouette in forest green and cream. SVG is preferred, with 16, 32 and 48 pixel ICO fallbacks.
 
 ## Verification
+
+`npm run test:ascii` checks ASCII-only output, fixed grid dimensions, deterministic frames, creature animation, scroll effects and pointer reactions. This also runs in the deployment workflow.
 
 The production export has been exercised in Chromium at 375, 390, 768, 1024 and 1440 pixel widths. Checks cover all 20 species routes and images, direct filtered URLs, search, habitat/class/status filters, extinction-risk ordering, empty/reset states, browser Back, species-to-species navigation, glossary search, legacy redirects, the 404 page, mobile navigation, and reduced-motion behavior.

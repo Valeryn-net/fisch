@@ -157,6 +157,24 @@ sup {
   isolation: isolate;
   overflow: clip;
 }
+.ascii-frame {
+  overflow: hidden;
+  contain: layout paint;
+}
+.ascii-frame pre {
+  position: absolute;
+  inset: 0;
+  margin: 0;
+  font: 400 12px / 14px var(--mono);
+  font-variant-ligatures: none;
+  font-kerning: none;
+  letter-spacing: 0;
+  white-space: pre;
+  pointer-events: none;
+  user-select: none;
+  transition: none;
+  animation: none;
+}
 .motion-toggle {
   position: fixed;
   right: 22px;
@@ -263,6 +281,16 @@ sup {
 }
 .footer-garden .ascii-nature {
   position: relative;
+}
+.footer-garden-label {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  justify-content: space-between;
+  padding: 0 0 16px;
+  color: var(--muted);
+  font-size: 9px;
+  text-transform: uppercase;
 }
 .footer-top {
   border-top: 1px solid var(--ink);
@@ -533,12 +561,11 @@ sup {
   min-width: 0;
   min-height: 350px;
 }
-.study-field canvas {
-  display: block;
-  width: 100%;
-  height: 100%;
+.study-scene {
   position: absolute;
-  inset: 0;
+  inset: 15px 16px 54px;
+  color: #cbd6a4;
+  opacity: 0.7;
 }
 .study-controls {
   position: absolute;

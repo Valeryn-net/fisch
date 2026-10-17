@@ -55,7 +55,12 @@ const links = [
     </header>
     <main id="main" tabindex="-1"><slot /></main>
     <footer class="site-footer container">
-      <div class="footer-garden"><AsciiNature kind="kelp" /></div>
+      <div class="footer-garden">
+        <div class="footer-garden-label mono">
+          <span>The tide pool</span><span>Stay a moment.</span>
+        </div>
+        <AsciiNature kind="kelp" />
+      </div>
       <div class="footer-top">
         <NuxtLink to="/" class="footer-name">Fischwiki<span>↗</span></NuxtLink>
         <p>A small collection.<br />A good place to get curious.</p>

@@ -18,6 +18,7 @@ jobs:
           node-version: 22
           cache: npm
       - run: npm ci
+      - run: npm run test:ascii
       - run: npm run generate
       # Fertige statische Seite auf den Branch "deploy" legen – den zieht Plesk nach /httpdocs
       - uses: peaceiris/actions-gh-pages@v4
